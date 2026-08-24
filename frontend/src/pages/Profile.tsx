@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import apiClient from '../api/client'
 import CvView from '../components/CvView'
+import AvatarCropModal from '../components/AvatarCropModal'
 import type { Education, Experience, Profile as ProfileType, Project } from '../types'
 
 type NewProject = Omit<Project, 'id' | 'thumbnail_url'>
@@ -26,6 +27,12 @@ const emptyProject: NewProject = { title: '', description: '', tech_stack: '', d
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 const MAX_CV_SIZE_BYTES = 5 * 1024 * 1024
+
+const CARD = 'bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6'
+const SECTION_LABEL = 'text-xs font-semibold text-earth-500 uppercase tracking-wide mb-4'
+const FIELD_LABEL = 'block text-xs font-medium text-earth-600 mb-1.5'
+const INPUT = 'w-full border border-earth-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fire-500'
+const SUBCARD = 'border border-earth-200 rounded-xl p-4 flex flex-col gap-3'
 
 const validateImageFile = (file: File): string => {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return 'Please choose a JPEG, PNG, WEBP, or GIF image.'
@@ -69,6 +76,7 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState('')
+  const [avatarCropSrc, setAvatarCropSrc] = useState<string | null>(null)
 
   const loadProfile = async () => {
     const { data } = await apiClient.get<ProfileType>('/profile/me')
@@ -117,7 +125,7 @@ export default function Profile() {
     }
   }
 
-  const handleAvatarUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelected = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const validationError = validateImageFile(file)
@@ -126,17 +134,29 @@ export default function Profile() {
       e.target.value = ''
       return
     }
+    setAvatarCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  const handleAvatarCropCancel = () => {
+    if (avatarCropSrc) URL.revokeObjectURL(avatarCropSrc)
+    setAvatarCropSrc(null)
+  }
+
+  const handleAvatarCropConfirm = async (blob: Blob) => {
     setUploading(true)
     setError('')
     try {
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', blob, 'avatar.jpg')
       const { data } = await apiClient.post('/profile/me/avatar', formData)
       setProfile(data)
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Upload failed')
     } finally {
       setUploading(false)
+      if (avatarCropSrc) URL.revokeObjectURL(avatarCropSrc)
+      setAvatarCropSrc(null)
     }
   }
 
@@ -305,7 +325,7 @@ export default function Profile() {
 
   if (!profile || !form) return <p className="text-center mt-16 text-earth-700">Loading...</p>
 
-  const publicUrl = `${window.location.origin}/u/${profile.id}`
+  const publicUrl = `${window.location.origin}${import.meta.env.BASE_URL}u/${profile.id}`
   const busy = saving || uploading || scanning || addingProject || Boolean(savingProjectId)
 
   const loadingOverlay = busy && (
@@ -340,7 +360,7 @@ export default function Profile() {
       <div className="mt-10 mb-10 px-4">
         {loadingOverlay}
         {errorToast}
-        <div className="max-w-3xl mx-auto flex justify-between items-center mb-4">
+        <div className="max-w-5xl mx-auto flex justify-between items-center mb-4">
           {profile.is_public ? (
             <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-fire-600 hover:text-fire-700 font-medium truncate">
               {publicUrl}
@@ -362,262 +382,344 @@ export default function Profile() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 mb-10 p-8 bg-white dark:bg-earth-100 rounded-xl shadow-sm border border-earth-200">
+    <div className="max-w-3xl mx-auto mt-10 mb-10 px-4 flex flex-col gap-6">
       {loadingOverlay}
       {errorToast}
-      <div className="flex items-center gap-4 mb-6">
-        <img
-          src={profile.avatar_url || 'https://placehold.co/96x96?text=?'}
-          alt="Avatar"
-          className="w-24 h-24 rounded-full object-cover border-2 border-earth-300"
+      {avatarCropSrc && (
+        <AvatarCropModal
+          imageSrc={avatarCropSrc}
+          onCancel={handleAvatarCropCancel}
+          onConfirm={handleAvatarCropConfirm}
         />
-        <label className="cursor-pointer text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-md">
-          {uploading ? 'Uploading...' : 'Change avatar'}
-          <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-        </label>
-      </div>
+      )}
 
-      <div className="mb-6 p-3 bg-earth-50 border border-earth-200 rounded-md flex items-center justify-between gap-3">
-        <p className="text-sm text-earth-600">
-          Upload a PDF CV to auto-fill the fields below. This replaces the current form data. Extraction is best-effort — please review before saving.
-        </p>
-        <label className="cursor-pointer text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-md shrink-0">
-          {scanning ? 'Scanning...' : 'Scan CV'}
-          <input type="file" accept="application/pdf" className="hidden" onChange={handleCvScan} disabled={scanning} />
-        </label>
-      </div>
-
-      <form onSubmit={handleSave} className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="Full name"
-          value={form.full_name}
-          onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-          className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-        />
-        <input
-          type="text"
-          placeholder="Headline"
-          value={form.headline}
-          onChange={(e) => setForm({ ...form, headline: e.target.value })}
-          className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-        />
-        <textarea
-          placeholder="Bio"
-          value={form.bio}
-          onChange={(e) => setForm({ ...form, bio: e.target.value })}
-          rows={4}
-          className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-        />
-
-        <h2 className="text-sm font-semibold text-earth-800 mt-2">Contact & links</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            type="text"
-            placeholder="Phone"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
+      {/* Avatar + CV scan */}
+      <section className={CARD}>
+        <div className="flex items-center gap-4">
+          <img
+            src={profile.avatar_url || 'https://placehold.co/96x96?text=?'}
+            alt="Avatar"
+            className="w-20 h-20 rounded-xl object-cover border-2 border-earth-200"
           />
-          <input
-            type="text"
-            placeholder="Location"
-            value={form.location}
-            onChange={(e) => setForm({ ...form, location: e.target.value })}
-            className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-          />
-          <input
-            type="text"
-            placeholder="Website URL"
-            value={form.website_url}
-            onChange={(e) => setForm({ ...form, website_url: e.target.value })}
-            className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-          />
-          <input
-            type="text"
-            placeholder="LinkedIn URL"
-            value={form.linkedin_url}
-            onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
-            className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-          />
-          <input
-            type="text"
-            placeholder="GitHub URL"
-            value={form.github_url}
-            onChange={(e) => setForm({ ...form, github_url: e.target.value })}
-            className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500 col-span-2"
-          />
+          <div>
+            <label className="cursor-pointer inline-block text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-lg">
+              {uploading ? 'Uploading...' : 'Change avatar'}
+              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarFileSelected} />
+            </label>
+            <p className="text-xs text-earth-500 mt-1.5">JPEG, PNG, WEBP or GIF, up to 5MB.</p>
+          </div>
         </div>
 
-        <h2 className="text-sm font-semibold text-earth-800 mt-2">Experience</h2>
-        <div className="flex flex-col gap-4">
-          {experiences.map((exp, i) => (
-            <div key={i} className="border border-earth-200 rounded-md p-3 flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="Title"
-                  value={exp.title}
-                  onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Company"
-                  value={exp.company}
-                  onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, company: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Start (e.g. Jan 2022)"
-                  value={exp.start_date}
-                  onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, start_date: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="End (e.g. Present)"
-                  value={exp.end_date}
-                  onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, end_date: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-              </div>
-              <textarea
-                placeholder="Description"
-                value={exp.description}
-                onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))}
-                rows={2}
-                className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
+        <div className="mt-5 p-4 bg-earth-50 border border-earth-200 rounded-xl flex items-center justify-between gap-3">
+          <p className="text-sm text-earth-600">
+            Upload a PDF CV to auto-fill the fields below. This replaces the current form data. Extraction is best-effort — please review before saving.
+          </p>
+          <label className="cursor-pointer text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-lg shrink-0">
+            {scanning ? 'Scanning...' : 'Scan CV'}
+            <input type="file" accept="application/pdf" className="hidden" onChange={handleCvScan} disabled={scanning} />
+          </label>
+        </div>
+      </section>
+
+      <form onSubmit={handleSave} className="flex flex-col gap-6">
+        {/* Basic info */}
+        <section className={CARD}>
+          <h2 className={SECTION_LABEL}>Basic info</h2>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={FIELD_LABEL}>Full name</label>
+              <input
+                type="text"
+                value={form.full_name}
+                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                className={INPUT}
               />
-              <button
-                type="button"
-                onClick={() => setExperiences(experiences.filter((_, j) => j !== i))}
-                className="text-fire-600 text-sm self-start"
-              >
-                Remove
-              </button>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setExperiences([...experiences, { ...emptyExperience }])}
-            className="text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-md self-start"
-          >
-            + Add experience
-          </button>
-        </div>
-
-        <h2 className="text-sm font-semibold text-earth-800 mt-2">Education</h2>
-        <div className="flex flex-col gap-4">
-          {educations.map((edu, i) => (
-            <div key={i} className="border border-earth-200 rounded-md p-3 flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="School"
-                  value={edu.school}
-                  onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, school: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Degree"
-                  value={edu.degree}
-                  onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, degree: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Start (e.g. 2016)"
-                  value={edu.start_date}
-                  onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, start_date: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="End (e.g. 2020)"
-                  value={edu.end_date}
-                  onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, end_date: e.target.value } : x)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-              </div>
-              <textarea
-                placeholder="Description"
-                value={edu.description}
-                onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))}
-                rows={2}
-                className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
+            <div>
+              <label className={FIELD_LABEL}>Headline</label>
+              <input
+                type="text"
+                placeholder="e.g. Full-Stack Developer"
+                value={form.headline}
+                onChange={(e) => setForm({ ...form, headline: e.target.value })}
+                className={INPUT}
               />
-              <button
-                type="button"
-                onClick={() => setEducations(educations.filter((_, j) => j !== i))}
-                className="text-fire-600 text-sm self-start"
-              >
-                Remove
-              </button>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setEducations([...educations, { ...emptyEducation }])}
-            className="text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-md self-start"
-          >
-            + Add education
-          </button>
-        </div>
+            <div>
+              <label className={FIELD_LABEL}>Bio</label>
+              <textarea
+                value={form.bio}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                rows={4}
+                className={INPUT}
+              />
+            </div>
+          </div>
+        </section>
 
-        <h2 className="text-sm font-semibold text-earth-800 mt-2">Skills & interests</h2>
-        <input
-          type="text"
-          placeholder="Skills, comma separated (e.g. React, Python, SQL)"
-          value={form.skills}
-          onChange={(e) => setForm({ ...form, skills: e.target.value })}
-          className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-        />
-        <input
-          type="text"
-          placeholder="Interests, comma separated (e.g. Photography, Chess)"
-          value={form.interests}
-          onChange={(e) => setForm({ ...form, interests: e.target.value })}
-          className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-        />
+        {/* Contact & links */}
+        <section className={CARD}>
+          <h2 className={SECTION_LABEL}>Contact & links</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={FIELD_LABEL}>Phone</label>
+              <input
+                type="text"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+            <div>
+              <label className={FIELD_LABEL}>Location</label>
+              <input
+                type="text"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+            <div>
+              <label className={FIELD_LABEL}>Website URL</label>
+              <input
+                type="text"
+                value={form.website_url}
+                onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+            <div>
+              <label className={FIELD_LABEL}>LinkedIn URL</label>
+              <input
+                type="text"
+                value={form.linkedin_url}
+                onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+            <div className="col-span-2">
+              <label className={FIELD_LABEL}>GitHub URL</label>
+              <input
+                type="text"
+                value={form.github_url}
+                onChange={(e) => setForm({ ...form, github_url: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+          </div>
+        </section>
 
-        <label className="flex items-center gap-2 text-sm text-earth-700 mt-2">
-          <input
-            type="checkbox"
-            checked={form.is_public}
-            onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
-            className="accent-fire-600"
-          />
-          Make my profile public (shareable at {publicUrl})
-        </label>
-
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-fire-600 hover:bg-fire-700 text-white rounded-md py-2 px-4 font-medium"
-          >
-            {saving ? 'Saving...' : 'Save profile'}
-          </button>
-          {profile.full_name && (
+        {/* Experience */}
+        <section className={CARD}>
+          <h2 className={SECTION_LABEL}>Experience</h2>
+          <div className="flex flex-col gap-4">
+            {experiences.map((exp, i) => (
+              <div key={i} className={SUBCARD}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={FIELD_LABEL}>Title</label>
+                    <input
+                      type="text"
+                      value={exp.title}
+                      onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Company</label>
+                    <input
+                      type="text"
+                      value={exp.company}
+                      onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, company: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Start</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Jan 2022"
+                      value={exp.start_date}
+                      onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, start_date: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>End</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Present"
+                      value={exp.end_date}
+                      onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, end_date: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Description</label>
+                  <textarea
+                    value={exp.description}
+                    onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))}
+                    rows={2}
+                    className={INPUT}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExperiences(experiences.filter((_, j) => j !== i))}
+                  className="text-fire-600 text-sm self-start font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
             <button
               type="button"
-              onClick={() => setMode('view')}
-              className="text-earth-700 hover:text-earth-900 text-sm font-medium"
+              onClick={() => setExperiences([...experiences, { ...emptyExperience }])}
+              className="text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-lg self-start"
             >
-              Cancel
+              + Add experience
             </button>
-          )}
-        </div>
+          </div>
+        </section>
+
+        {/* Education */}
+        <section className={CARD}>
+          <h2 className={SECTION_LABEL}>Education</h2>
+          <div className="flex flex-col gap-4">
+            {educations.map((edu, i) => (
+              <div key={i} className={SUBCARD}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={FIELD_LABEL}>School</label>
+                    <input
+                      type="text"
+                      value={edu.school}
+                      onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, school: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Degree</label>
+                    <input
+                      type="text"
+                      value={edu.degree}
+                      onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, degree: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>Start</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 2016"
+                      value={edu.start_date}
+                      onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, start_date: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label className={FIELD_LABEL}>End</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 2020"
+                      value={edu.end_date}
+                      onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, end_date: e.target.value } : x)))}
+                      className={INPUT}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Description</label>
+                  <textarea
+                    value={edu.description}
+                    onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))}
+                    rows={2}
+                    className={INPUT}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEducations(educations.filter((_, j) => j !== i))}
+                  className="text-fire-600 text-sm self-start font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setEducations([...educations, { ...emptyEducation }])}
+              className="text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-lg self-start"
+            >
+              + Add education
+            </button>
+          </div>
+        </section>
+
+        {/* Skills, interests, visibility, save */}
+        <section className={CARD}>
+          <h2 className={SECTION_LABEL}>Skills & interests</h2>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={FIELD_LABEL}>Skills</label>
+              <input
+                type="text"
+                placeholder="Comma separated, e.g. React, Python, SQL"
+                value={form.skills}
+                onChange={(e) => setForm({ ...form, skills: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+            <div>
+              <label className={FIELD_LABEL}>Interests</label>
+              <input
+                type="text"
+                placeholder="Comma separated, e.g. Photography, Chess"
+                value={form.interests}
+                onChange={(e) => setForm({ ...form, interests: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-earth-700 mt-1">
+              <input
+                type="checkbox"
+                checked={form.is_public}
+                onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
+                className="accent-fire-600"
+              />
+              Make my profile public (shareable at {publicUrl})
+            </label>
+
+            <div className="flex gap-3 pt-2 border-t border-earth-200">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-fire-600 hover:bg-fire-700 text-white rounded-lg py-2 px-4 font-medium mt-4"
+              >
+                {saving ? 'Saving...' : 'Save profile'}
+              </button>
+              {profile.full_name && (
+                <button
+                  type="button"
+                  onClick={() => setMode('view')}
+                  className="text-earth-700 hover:text-earth-900 text-sm font-medium mt-4"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
       </form>
 
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-earth-800 mb-3">Projects</h2>
+      {/* Projects */}
+      <section className={CARD}>
+        <h2 className={SECTION_LABEL}>Projects</h2>
         <div className="flex flex-col gap-4">
           {projects.map((proj) => (
-            <div key={proj.id} className="border border-earth-200 rounded-md p-3 flex flex-col gap-2">
+            <div key={proj.id} className={SUBCARD}>
               <div className="flex gap-3">
                 <img
                   src={
@@ -626,9 +728,9 @@ export default function Profile() {
                       : proj.thumbnail_url || 'https://placehold.co/96x64?text=+'
                   }
                   alt=""
-                  className="w-24 h-16 object-cover rounded-md border border-earth-200 shrink-0"
+                  className="w-24 h-16 object-cover rounded-lg border border-earth-200 shrink-0"
                 />
-                <label className="cursor-pointer text-xs bg-earth-100 hover:bg-earth-200 text-earth-800 px-2 py-1 rounded-md self-start">
+                <label className="cursor-pointer text-xs bg-earth-100 hover:bg-earth-200 text-earth-800 px-2 py-1 rounded-lg self-start">
                   Change image
                   <input
                     type="file"
@@ -638,56 +740,67 @@ export default function Profile() {
                   />
                 </label>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder="Title"
-                  value={proj.title}
-                  onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, title: e.target.value } : p)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Tech stack, comma separated"
-                  value={proj.tech_stack}
-                  onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, tech_stack: e.target.value } : p)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Demo URL"
-                  value={proj.demo_url}
-                  onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, demo_url: e.target.value } : p)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-                />
-                <input
-                  type="text"
-                  placeholder="GitHub URL"
-                  value={proj.github_url}
-                  onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, github_url: e.target.value } : p)))}
-                  className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={FIELD_LABEL}>Title</label>
+                  <input
+                    type="text"
+                    value={proj.title}
+                    onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, title: e.target.value } : p)))}
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Tech stack</label>
+                  <input
+                    type="text"
+                    placeholder="Comma separated"
+                    value={proj.tech_stack}
+                    onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, tech_stack: e.target.value } : p)))}
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Demo URL</label>
+                  <input
+                    type="text"
+                    value={proj.demo_url}
+                    onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, demo_url: e.target.value } : p)))}
+                    className={INPUT}
+                  />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>GitHub URL</label>
+                  <input
+                    type="text"
+                    value={proj.github_url}
+                    onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, github_url: e.target.value } : p)))}
+                    className={INPUT}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={FIELD_LABEL}>Description</label>
+                <textarea
+                  value={proj.description}
+                  onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, description: e.target.value } : p)))}
+                  rows={2}
+                  className={INPUT}
                 />
               </div>
-              <textarea
-                placeholder="Description"
-                value={proj.description}
-                onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, description: e.target.value } : p)))}
-                rows={2}
-                className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-              />
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => handleSaveProject(proj.id)}
                   disabled={savingProjectId === proj.id}
-                  className="text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-md self-start"
+                  className="text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-lg self-start"
                 >
                   {savingProjectId === proj.id ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDeleteProject(proj.id)}
-                  className="text-fire-600 text-sm self-start"
+                  className="text-fire-600 text-sm self-start font-medium"
                 >
                   Remove
                 </button>
@@ -695,46 +808,57 @@ export default function Profile() {
             </div>
           ))}
 
-          <form onSubmit={handleAddProject} className="border border-dashed border-earth-300 rounded-md p-3 flex flex-col gap-2">
+          <form onSubmit={handleAddProject} className="border border-dashed border-earth-300 rounded-xl p-4 flex flex-col gap-3">
             <p className="text-sm font-medium text-earth-700">Add a project</p>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                placeholder="Title"
-                value={newProject.title}
-                onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-                className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-              />
-              <input
-                type="text"
-                placeholder="Tech stack, comma separated"
-                value={newProject.tech_stack}
-                onChange={(e) => setNewProject({ ...newProject, tech_stack: e.target.value })}
-                className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-              />
-              <input
-                type="text"
-                placeholder="Demo URL"
-                value={newProject.demo_url}
-                onChange={(e) => setNewProject({ ...newProject, demo_url: e.target.value })}
-                className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-              />
-              <input
-                type="text"
-                placeholder="GitHub URL"
-                value={newProject.github_url}
-                onChange={(e) => setNewProject({ ...newProject, github_url: e.target.value })}
-                className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={FIELD_LABEL}>Title</label>
+                <input
+                  type="text"
+                  value={newProject.title}
+                  onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
+                  className={INPUT}
+                />
+              </div>
+              <div>
+                <label className={FIELD_LABEL}>Tech stack</label>
+                <input
+                  type="text"
+                  placeholder="Comma separated"
+                  value={newProject.tech_stack}
+                  onChange={(e) => setNewProject({ ...newProject, tech_stack: e.target.value })}
+                  className={INPUT}
+                />
+              </div>
+              <div>
+                <label className={FIELD_LABEL}>Demo URL</label>
+                <input
+                  type="text"
+                  value={newProject.demo_url}
+                  onChange={(e) => setNewProject({ ...newProject, demo_url: e.target.value })}
+                  className={INPUT}
+                />
+              </div>
+              <div>
+                <label className={FIELD_LABEL}>GitHub URL</label>
+                <input
+                  type="text"
+                  value={newProject.github_url}
+                  onChange={(e) => setNewProject({ ...newProject, github_url: e.target.value })}
+                  className={INPUT}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={FIELD_LABEL}>Description</label>
+              <textarea
+                value={newProject.description}
+                onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                rows={2}
+                className={INPUT}
               />
             </div>
-            <textarea
-              placeholder="Description"
-              value={newProject.description}
-              onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-              rows={2}
-              className="border border-earth-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fire-500"
-            />
-            <label className="cursor-pointer text-xs bg-earth-100 hover:bg-earth-200 text-earth-800 px-2 py-1 rounded-md self-start">
+            <label className="cursor-pointer text-xs bg-earth-100 hover:bg-earth-200 text-earth-800 px-2 py-1 rounded-lg self-start">
               {newProjectFile ? newProjectFile.name : 'Choose thumbnail'}
               <input
                 type="file"
@@ -746,18 +870,19 @@ export default function Profile() {
             <button
               type="submit"
               disabled={addingProject}
-              className="text-sm bg-fire-600 hover:bg-fire-700 text-white px-3 py-1.5 rounded-md self-start"
+              className="text-sm bg-fire-600 hover:bg-fire-700 text-white px-3 py-1.5 rounded-lg self-start"
             >
               {addingProject ? 'Adding...' : '+ Add project'}
             </button>
           </form>
         </div>
-      </div>
+      </section>
 
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-earth-800">Gallery</h2>
-          <label className="cursor-pointer text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-md">
+      {/* Gallery */}
+      <section className={CARD}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className={`${SECTION_LABEL} mb-0`}>Gallery</h2>
+          <label className="cursor-pointer text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-lg">
             Add image
             <input type="file" accept="image/*" className="hidden" onChange={handleGalleryUpload} />
           </label>
@@ -765,7 +890,7 @@ export default function Profile() {
         <div className="grid grid-cols-3 gap-3">
           {profile.images.map((img) => (
             <div key={img.id} className="relative group">
-              <img src={img.url} alt="" className="w-full h-28 object-cover rounded-md border border-earth-200" />
+              <img src={img.url} alt="" className="w-full h-28 object-cover rounded-lg border border-earth-200" />
               <button
                 type="button"
                 onClick={() => handleDeleteImage(img.id)}
@@ -776,7 +901,7 @@ export default function Profile() {
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   )
 }

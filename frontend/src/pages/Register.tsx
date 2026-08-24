@@ -24,7 +24,7 @@ export default function Register() {
 
   if (message) {
     return (
-      <div className="max-w-sm mx-auto mt-16 p-8 bg-white dark:bg-earth-100 rounded-xl shadow-sm border border-earth-200 text-center">
+      <div className="max-w-sm mx-auto mt-16 p-8 bg-white dark:bg-earth-100 rounded-xl shadow-md border border-earth-300 dark:border-earth-200 text-center">
         <h1 className="text-2xl font-semibold text-earth-800 mb-4">Check your email</h1>
         <p className="text-earth-700">{message}</p>
       </div>
@@ -32,7 +32,7 @@ export default function Register() {
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-16 p-8 bg-white dark:bg-earth-100 rounded-xl shadow-sm border border-earth-200">
+    <div className="max-w-sm mx-auto mt-16 p-8 bg-white dark:bg-earth-100 rounded-xl shadow-md border border-earth-300 dark:border-earth-200">
       <h1 className="text-2xl font-semibold text-earth-800 mb-6">Create account</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input

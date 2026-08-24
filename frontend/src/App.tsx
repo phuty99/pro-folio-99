@@ -8,13 +8,17 @@ import Register from './pages/Register'
 import Profile from './pages/Profile'
 import PublicProfile from './pages/PublicProfile'
 import VerifyEmail from './pages/VerifyEmail'
+import BlogManage from './pages/BlogManage'
+import BlogEditor from './pages/BlogEditor'
+import PublicBlogList from './pages/PublicBlogList'
+import PublicBlogPost from './pages/PublicBlogPost'
 
 function App() {
   return (
-    <BrowserRouter basename="/profile-phunguyen">
+    <BrowserRouter basename="/pro-folio-99">
       <ThemeProvider>
         <AuthProvider>
-          <div className="min-h-screen bg-earth-50">
+          <div className="min-h-screen bg-canvas">
             <Navbar />
             <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
@@ -29,7 +33,33 @@ function App() {
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/blog"
+                element={
+                  <PrivateRoute>
+                    <BlogManage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/blog/new"
+                element={
+                  <PrivateRoute>
+                    <BlogEditor />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/blog/:postId/edit"
+                element={
+                  <PrivateRoute>
+                    <BlogEditor />
+                  </PrivateRoute>
+                }
+              />
               <Route path="/u/:profileId" element={<PublicProfile />} />
+              <Route path="/u/:profileId/blog" element={<PublicBlogList />} />
+              <Route path="/u/:profileId/blog/:slug" element={<PublicBlogPost />} />
             </Routes>
           </div>
         </AuthProvider>

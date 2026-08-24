@@ -22,7 +22,7 @@ export default function Login() {
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-16 p-8 bg-white dark:bg-earth-100 rounded-xl shadow-sm border border-earth-200">
+    <div className="max-w-sm mx-auto mt-16 p-8 bg-white dark:bg-earth-100 rounded-xl shadow-md border border-earth-300 dark:border-earth-200">
       <h1 className="text-2xl font-semibold text-earth-800 mb-6">Login</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
