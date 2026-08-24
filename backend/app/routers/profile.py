@@ -7,6 +7,8 @@ from app.core.deps import get_current_user
 from app.db.database import get_db
 from app.models.profile import Education, Experience, Profile, ProfileImage, Project
 from app.models.user import User
+from app.routers.blog import _full, _summary
+from app.schemas.blog import PostResponse, PostSummary
 from app.schemas.profile import (
     CvScanResponse,
     EducationListRequest,
@@ -257,6 +259,27 @@ def get_public_profile(profile_id: str, db: Session = Depends(get_db)):
     if not profile or not profile.is_public:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
     return _serialize(profile)
+
+
+@router.get("/{profile_id}/posts", response_model=list[PostSummary])
+def list_public_posts(profile_id: str, db: Session = Depends(get_db)):
+    profile = db.get(Profile, profile_id)
+    if not profile or not profile.is_public:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+    posts = [p for p in profile.posts if p.status == "published"]
+    posts.sort(key=lambda p: p.published_at or p.created_at, reverse=True)
+    return [_summary(p) for p in posts]
+
+
+@router.get("/{profile_id}/posts/{slug}", response_model=PostResponse)
+def get_public_post(profile_id: str, slug: str, db: Session = Depends(get_db)):
+    profile = db.get(Profile, profile_id)
+    if not profile or not profile.is_public:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    post = next((p for p in profile.posts if p.slug == slug and p.status == "published"), None)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    return _full(post)
 
 
 @router.post("/me/avatar", response_model=ProfileResponse)

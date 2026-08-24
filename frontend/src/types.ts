@@ -53,6 +53,22 @@ export interface Profile {
   projects: Project[]
 }
 
+export type PostStatus = 'draft' | 'published'
+
+export interface PostSummary {
+  id: string
+  title: string
+  slug: string
+  status: PostStatus
+  created_at: string
+  updated_at: string
+  published_at: string | null
+}
+
+export interface Post extends PostSummary {
+  content: string
+}
+
 export interface CvScanResponse {
   full_name: string
   headline: string

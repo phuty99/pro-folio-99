@@ -23,6 +23,9 @@ export default function Navbar() {
             <Link to="/profile" className="hover:text-fire-500">
               My Profile
             </Link>
+            <Link to="/blog" className="hover:text-fire-500">
+              Blog
+            </Link>
             <button
               type="button"
               onClick={handleLogout}

@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import type { Profile } from '../types'
+import VoxelCube from './VoxelCube'
 
 function splitTags(text: string): string[] {
   return (text || '')
@@ -19,71 +21,112 @@ export default function CvView({ profile }: { profile: Profile }) {
   ].filter((link): link is { label: string; href: string | null } => Boolean(link))
 
   return (
-    <div className="max-w-3xl mx-auto bg-white dark:bg-earth-100 rounded-xl shadow-sm border border-earth-200 overflow-hidden">
-      <div className="bg-gradient-to-br from-earth-800 to-fire-700 text-white px-8 py-10 flex flex-col sm:flex-row items-center sm:items-end gap-6">
-        <img
-          src={profile.avatar_url || 'https://placehold.co/128x128?text=?'}
-          alt="Avatar"
-          className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md"
-        />
-        <div className="text-center sm:text-left flex-1">
-          <h1 className="text-3xl font-bold">{profile.full_name || 'Unnamed'}</h1>
-          {profile.headline && <p className="text-earth-100 mt-1">{profile.headline}</p>}
+    <div className="max-w-5xl mx-auto grid lg:grid-cols-[280px_1fr] gap-6 items-start">
+      {/* Sidebar */}
+      <aside className="lg:sticky lg:top-8 bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6 flex flex-col items-center text-center gap-4">
+        <div className="relative">
+          <img
+            src={profile.avatar_url || 'https://placehold.co/128x128?text=?'}
+            alt="Avatar"
+            className="w-28 h-28 rounded-2xl object-cover border-2 border-earth-200"
+          />
+          <VoxelCube size={28} className="absolute -bottom-2 -right-2 drop-shadow" />
         </div>
+
+        <div>
+          <h1 className="text-xl font-bold text-earth-900">{profile.full_name || 'Unnamed'}</h1>
+          {profile.headline && <p className="text-earth-600 text-sm mt-1">{profile.headline}</p>}
+        </div>
+
         {profile.cv_url && (
           <a
             href={profile.cv_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-md border border-white/30 shrink-0"
+            className="w-full bg-fire-600 hover:bg-fire-700 text-white text-sm font-medium px-4 py-2 rounded-lg"
           >
             Download CV (PDF)
           </a>
         )}
-      </div>
 
-      {contactLinks.length > 0 && (
-        <div className="flex flex-wrap gap-x-6 gap-y-2 px-8 py-4 bg-earth-50 border-b border-earth-200 text-sm text-earth-700">
-          {contactLinks.map((link, i) =>
-            link.href ? (
-              <a key={i} href={link.href} target="_blank" rel="noopener noreferrer" className="hover:text-fire-600 font-medium">
-                {link.label}
-              </a>
-            ) : (
-              <span key={i}>{link.label}</span>
-            )
-          )}
-        </div>
-      )}
+        <Link
+          to={`/u/${profile.id}/blog`}
+          className="w-full bg-earth-100 hover:bg-earth-200 text-earth-800 text-sm font-medium px-4 py-2 rounded-lg"
+        >
+          Blog posts
+        </Link>
 
-      <div className="px-8 py-8 flex flex-col gap-8">
+        {contactLinks.length > 0 && (
+          <div className="w-full border-t border-earth-200 pt-4 flex flex-col gap-2 text-sm text-earth-700 text-left">
+            {contactLinks.map((link, i) =>
+              link.href ? (
+                <a key={i} href={link.href} target="_blank" rel="noopener noreferrer" className="hover:text-fire-600 font-medium truncate">
+                  {link.label}
+                </a>
+              ) : (
+                <span key={i} className="truncate">{link.label}</span>
+              )
+            )}
+          </div>
+        )}
+
+        {skills.length > 0 && (
+          <div className="w-full border-t border-earth-200 pt-4 text-left">
+            <h2 className="text-xs font-semibold text-earth-500 uppercase tracking-wide mb-2">Skills</h2>
+            <div className="flex flex-wrap gap-1.5">
+              {skills.map((skill, i) => (
+                <span key={i} className="bg-earth-50 text-earth-800 text-xs px-2.5 py-1 rounded-md border border-earth-200">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {interests.length > 0 && (
+          <div className="w-full border-t border-earth-200 pt-4 text-left">
+            <h2 className="text-xs font-semibold text-earth-500 uppercase tracking-wide mb-2">Interests</h2>
+            <div className="flex flex-wrap gap-1.5">
+              {interests.map((interest, i) => (
+                <span key={i} className="bg-fire-50 text-fire-700 text-xs px-2.5 py-1 rounded-md">
+                  {interest}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* Main content */}
+      <div className="flex flex-col gap-6 min-w-0">
         {profile.bio && (
-          <section>
-            <h2 className="text-lg font-semibold text-earth-800 border-b border-earth-200 pb-2 mb-3">About</h2>
-            <p className="text-earth-800 whitespace-pre-line">{profile.bio}</p>
+          <section className="bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6">
+            <h2 className="text-sm font-semibold text-earth-500 uppercase tracking-wide mb-3">About</h2>
+            <p className="text-earth-800 whitespace-pre-line leading-relaxed">{profile.bio}</p>
           </section>
         )}
 
         {profile.experiences.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-earth-800 border-b border-earth-200 pb-2 mb-3">Experience</h2>
-            <div className="flex flex-col gap-5">
+          <section className="bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6">
+            <h2 className="text-sm font-semibold text-earth-500 uppercase tracking-wide mb-5">Experience</h2>
+            <div className="flex flex-col">
               {profile.experiences.map((exp, i) => (
-                <div key={i}>
-                  <div className="flex flex-wrap justify-between gap-x-4">
-                    <p className="font-medium text-earth-800">
+                <div key={i} className="relative pl-9 pb-7 last:pb-0 border-l-2 border-earth-300 last:border-transparent">
+                  <VoxelCube size={22} className="absolute -left-[11px] top-0" />
+                  <div className="flex flex-wrap justify-between gap-x-4 min-w-0">
+                    <p className="font-medium text-earth-900 min-w-0">
                       {exp.title}
-                      {exp.company && <span className="text-earth-600"> · {exp.company}</span>}
+                      {exp.company && <span className="text-earth-600 font-normal"> · {exp.company}</span>}
                     </p>
                     {(exp.start_date || exp.end_date) && (
-                      <p className="text-sm text-earth-500 whitespace-nowrap">
+                      <p className="text-xs text-earth-500 whitespace-nowrap font-medium">
                         {exp.start_date}
                         {exp.start_date && exp.end_date ? ' – ' : ''}
                         {exp.end_date}
                       </p>
                     )}
                   </div>
-                  {exp.description && <p className="text-earth-700 mt-1 whitespace-pre-line">{exp.description}</p>}
+                  {exp.description && <p className="text-earth-700 mt-1.5 text-sm whitespace-pre-line leading-relaxed">{exp.description}</p>}
                 </div>
               ))}
             </div>
@@ -91,25 +134,26 @@ export default function CvView({ profile }: { profile: Profile }) {
         )}
 
         {profile.educations.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-earth-800 border-b border-earth-200 pb-2 mb-3">Education</h2>
-            <div className="flex flex-col gap-5">
+          <section className="bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6">
+            <h2 className="text-sm font-semibold text-earth-500 uppercase tracking-wide mb-5">Education</h2>
+            <div className="flex flex-col">
               {profile.educations.map((edu, i) => (
-                <div key={i}>
-                  <div className="flex flex-wrap justify-between gap-x-4">
-                    <p className="font-medium text-earth-800">
+                <div key={i} className="relative pl-9 pb-7 last:pb-0 border-l-2 border-earth-300 last:border-transparent">
+                  <VoxelCube size={22} className="absolute -left-[11px] top-0" />
+                  <div className="flex flex-wrap justify-between gap-x-4 min-w-0">
+                    <p className="font-medium text-earth-900 min-w-0">
                       {edu.school}
-                      {edu.degree && <span className="text-earth-600"> · {edu.degree}</span>}
+                      {edu.degree && <span className="text-earth-600 font-normal"> · {edu.degree}</span>}
                     </p>
                     {(edu.start_date || edu.end_date) && (
-                      <p className="text-sm text-earth-500 whitespace-nowrap">
+                      <p className="text-xs text-earth-500 whitespace-nowrap font-medium">
                         {edu.start_date}
                         {edu.start_date && edu.end_date ? ' – ' : ''}
                         {edu.end_date}
                       </p>
                     )}
                   </div>
-                  {edu.description && <p className="text-earth-700 mt-1 whitespace-pre-line">{edu.description}</p>}
+                  {edu.description && <p className="text-earth-700 mt-1.5 text-sm whitespace-pre-line leading-relaxed">{edu.description}</p>}
                 </div>
               ))}
             </div>
@@ -117,25 +161,25 @@ export default function CvView({ profile }: { profile: Profile }) {
         )}
 
         {profile.projects.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-earth-800 border-b border-earth-200 pb-2 mb-3">Projects</h2>
-            <div className="grid sm:grid-cols-2 gap-5">
+          <section className="bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6">
+            <h2 className="text-sm font-semibold text-earth-500 uppercase tracking-wide mb-5">Projects</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
               {profile.projects.map((proj) => {
                 const tech = splitTags(proj.tech_stack)
                 return (
-                  <div key={proj.id} className="border border-earth-200 rounded-lg overflow-hidden flex flex-col">
+                  <div key={proj.id} className="border border-earth-200 rounded-xl overflow-hidden flex flex-col">
                     {proj.thumbnail_url && (
                       <img src={proj.thumbnail_url} alt="" className="w-full h-36 object-cover" />
                     )}
                     <div className="p-4 flex flex-col gap-2 flex-1">
-                      <p className="font-medium text-earth-800">{proj.title}</p>
+                      <p className="font-medium text-earth-900">{proj.title}</p>
                       {proj.description && (
                         <p className="text-earth-700 text-sm whitespace-pre-line">{proj.description}</p>
                       )}
                       {tech.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {tech.map((t, i) => (
-                            <span key={i} className="bg-earth-100 text-earth-800 text-xs px-2 py-0.5 rounded-full">
+                            <span key={i} className="bg-earth-50 text-earth-800 text-xs px-2 py-0.5 rounded-md border border-earth-200">
                               {t}
                             </span>
                           ))}
@@ -161,38 +205,12 @@ export default function CvView({ profile }: { profile: Profile }) {
           </section>
         )}
 
-        {skills.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-earth-800 border-b border-earth-200 pb-2 mb-3">Skills</h2>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill, i) => (
-                <span key={i} className="bg-earth-100 text-earth-800 text-sm px-3 py-1 rounded-full">
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {interests.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-earth-800 border-b border-earth-200 pb-2 mb-3">Interests</h2>
-            <div className="flex flex-wrap gap-2">
-              {interests.map((interest, i) => (
-                <span key={i} className="bg-fire-50 text-fire-700 text-sm px-3 py-1 rounded-full">
-                  {interest}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
         {profile.images.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-earth-800 border-b border-earth-200 pb-2 mb-3">Gallery</h2>
+          <section className="bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6">
+            <h2 className="text-sm font-semibold text-earth-500 uppercase tracking-wide mb-5">Gallery</h2>
             <div className="grid grid-cols-3 gap-3">
               {profile.images.map((img) => (
-                <img key={img.id} src={img.url} alt="" className="w-full h-28 object-cover rounded-md border border-earth-200" />
+                <img key={img.id} src={img.url} alt="" className="w-full h-28 object-cover rounded-lg border border-earth-200" />
               ))}
             </div>
           </section>
