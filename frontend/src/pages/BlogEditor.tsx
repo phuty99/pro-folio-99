@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import apiClient from '../api/client'
@@ -7,16 +7,29 @@ import type { Post } from '../types'
 
 const CARD = 'bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6'
 const INPUT = 'w-full border border-earth-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fire-500'
+const TOOLBAR_BTN = 'px-2 py-1.5 rounded-md text-xs font-medium bg-earth-100 hover:bg-earth-200 text-earth-800'
+
+const TOOLBAR_ACTIONS = [
+  { label: 'B', title: 'Bold', kind: 'wrap' as const, before: '**', after: '**', placeholder: 'bold text' },
+  { label: 'I', title: 'Italic', kind: 'wrap' as const, before: '*', after: '*', placeholder: 'italic text' },
+  { label: '</>', title: 'Inline code', kind: 'wrap' as const, before: '`', after: '`', placeholder: 'code' },
+  { label: 'H2', title: 'Heading', kind: 'line' as const, prefix: '## ' },
+  { label: '"', title: 'Quote', kind: 'line' as const, prefix: '> ' },
+  { label: '•', title: 'Bullet list', kind: 'line' as const, prefix: '- ' },
+  { label: '1.', title: 'Numbered list', kind: 'line' as const, prefix: '1. ' },
+  { label: '🔗', title: 'Link', kind: 'wrap' as const, before: '[', after: '](https://)', placeholder: 'link text' },
+  { label: '{ }', title: 'Code block', kind: 'wrap' as const, before: '```\n', after: '\n```', placeholder: 'code here' },
+]
 
 export default function BlogEditor() {
   const { postId } = useParams()
   const navigate = useNavigate()
   const isEditing = Boolean(postId)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const [post, setPost] = useState<Post | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [tab, setTab] = useState<'write' | 'preview'>('write')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,6 +41,35 @@ export default function BlogEditor() {
       setContent(data.content)
     })
   }, [postId])
+
+  const applyWrap = (before: string, after: string, placeholder: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selected = content.slice(start, end) || placeholder
+    const nextContent = content.slice(0, start) + before + selected + after + content.slice(end)
+    setContent(nextContent)
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const selStart = start + before.length
+      textarea.setSelectionRange(selStart, selStart + selected.length)
+    })
+  }
+
+  const applyLinePrefix = (prefix: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const lineStart = content.lastIndexOf('\n', start - 1) + 1
+    const nextContent = content.slice(0, lineStart) + prefix + content.slice(lineStart)
+    setContent(nextContent)
+    requestAnimationFrame(() => {
+      textarea.focus()
+      const pos = start + prefix.length
+      textarea.setSelectionRange(pos, pos)
+    })
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -63,7 +105,11 @@ export default function BlogEditor() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 mb-10 px-4 flex flex-col gap-6">
+    <div className="max-w-6xl mx-auto mt-10 mb-10 px-4 flex flex-col gap-6">
+      <Link to="/blog" className="text-sm text-fire-600 hover:text-fire-700 font-medium self-start">
+        ← Back to My Blog
+      </Link>
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-earth-900">{isEditing ? 'Edit post' : 'New post'}</h1>
         {post && (
@@ -93,43 +139,42 @@ export default function BlogEditor() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-earth-600">Content (Markdown)</label>
-              <div className="flex gap-1 text-xs">
+            <label className="block text-xs font-medium text-earth-600 mb-1.5">Content (Markdown)</label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {TOOLBAR_ACTIONS.map((action) => (
                 <button
+                  key={action.title}
                   type="button"
-                  onClick={() => setTab('write')}
-                  className={`px-2 py-1 rounded-md ${tab === 'write' ? 'bg-fire-600 text-white' : 'bg-earth-100 text-earth-700'}`}
+                  title={action.title}
+                  onClick={() =>
+                    action.kind === 'wrap'
+                      ? applyWrap(action.before, action.after, action.placeholder)
+                      : applyLinePrefix(action.prefix)
+                  }
+                  className={TOOLBAR_BTN}
                 >
-                  Write
+                  {action.label}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setTab('preview')}
-                  className={`px-2 py-1 rounded-md ${tab === 'preview' ? 'bg-fire-600 text-white' : 'bg-earth-100 text-earth-700'}`}
-                >
-                  Preview
-                </button>
-              </div>
+              ))}
             </div>
 
-            {tab === 'write' ? (
+            <div className="grid md:grid-cols-2 gap-4">
               <textarea
+                ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                rows={16}
+                rows={20}
                 className={`${INPUT} font-mono`}
                 placeholder="Write your post in Markdown..."
               />
-            ) : (
-              <div className="border border-earth-300 rounded-lg px-4 py-3 min-h-[24rem] prose prose-sm max-w-none dark:prose-invert prose-headings:text-earth-900 prose-p:text-earth-800 prose-a:text-fire-600 prose-strong:text-earth-900 prose-code:text-fire-700">
+              <div className="border border-earth-300 rounded-lg px-4 py-3 overflow-y-auto max-h-[32rem] prose prose-sm max-w-none dark:prose-invert prose-headings:text-earth-900 prose-p:text-earth-800 prose-a:text-fire-600 prose-strong:text-earth-900 prose-code:text-fire-700">
                 {content ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
                 ) : (
                   <p className="text-earth-400">Nothing to preview yet.</p>
                 )}
               </div>
-            )}
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2 border-t border-earth-200">

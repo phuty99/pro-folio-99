@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import Navbar from './components/Navbar'
 import PrivateRoute from './components/PrivateRoute'
@@ -13,6 +13,11 @@ import BlogEditor from './pages/BlogEditor'
 import PublicBlogList from './pages/PublicBlogList'
 import PublicBlogPost from './pages/PublicBlogPost'
 
+function RootRedirect() {
+  const { isAuthenticated } = useAuth()
+  return <Navigate to={isAuthenticated ? '/profile' : '/login'} replace />
+}
+
 function App() {
   return (
     <BrowserRouter basename="/pro-folio-99">
@@ -21,7 +26,7 @@ function App() {
           <div className="min-h-screen bg-canvas">
             <Navbar />
             <Routes>
-              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/" element={<RootRedirect />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
