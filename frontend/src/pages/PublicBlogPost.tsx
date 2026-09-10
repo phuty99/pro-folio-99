@@ -5,8 +5,6 @@ import remarkGfm from 'remark-gfm'
 import apiClient from '../api/client'
 import type { Post } from '../types'
 
-const CARD = 'bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6'
-
 export default function PublicBlogPost() {
   const { profileId, slug } = useParams()
   const [post, setPost] = useState<Post | null>(null)
@@ -24,11 +22,11 @@ export default function PublicBlogPost() {
 
   return (
     <div className="max-w-3xl mx-auto mt-10 mb-10 px-4 flex flex-col gap-4">
-      <Link to={`/u/${profileId}/blog`} className="text-sm text-fire-600 hover:text-fire-700 font-medium self-start">
+      <Link to={`/u/${profileId}/blog`} className="link text-sm self-start">
         ← Back to blog
       </Link>
 
-      <section className={CARD}>
+      <section className="card">
         <h1 className="text-2xl font-semibold text-earth-900">{post.title}</h1>
         {post.published_at && (
           <p className="text-xs text-earth-500 mt-1 mb-6">{new Date(post.published_at).toLocaleDateString()}</p>

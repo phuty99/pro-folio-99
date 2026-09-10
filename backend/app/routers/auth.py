@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_user, is_admin_email
 from app.core.security import (
     create_access_token,
     create_email_verification_token,
@@ -11,10 +12,27 @@ from app.core.security import (
 from app.db.database import get_db
 from app.models.profile import Profile
 from app.models.user import User
-from app.schemas.auth import LoginRequest, MessageResponse, RegisterRequest, TokenResponse, VerifyEmailRequest
+from app.schemas.auth import (
+    LoginRequest,
+    MessageResponse,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+    VerifyEmailRequest,
+)
 from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    return UserResponse(
+        id=str(current_user.id),
+        email=current_user.email,
+        is_admin=is_admin_email(current_user.email),
+        full_name=current_user.profile.full_name if current_user.profile else "",
+    )
 
 
 @router.post("/register", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)

@@ -1,9 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-sans: 'Nunito', system-ui, 'Segoe UI', Roboto, sans-serif;
+
   /* Neutral charcoal/white base */
   --color-earth-50: #fafafa;
   --color-earth-100: #f4f4f5;
@@ -43,16 +46,21 @@
   --color-canvas: #09090b;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   background-color: var(--color-canvas);
   color: var(--color-earth-900);
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 input,
-textarea {
+textarea,
+select {
   background-color: var(--color-earth-50);
   color: var(--color-earth-900);
 }
@@ -60,4 +68,57 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   color: var(--color-earth-400);
+}
+
+/* Visible keyboard focus everywhere, never silently removed */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-fire-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6;
+  }
+
+  .field-label {
+    @apply block text-xs font-medium text-earth-600 mb-1.5;
+  }
+
+  .input {
+    @apply w-full border border-earth-300 rounded-lg px-3 py-2 text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-fire-500;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-fire-600 hover:bg-fire-700 text-white shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-earth-300 text-earth-700 hover:bg-earth-100 dark:hover:bg-earth-200;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-fire-600 hover:text-fire-700 hover:bg-fire-50 dark:hover:bg-earth-200;
+  }
+
+  .link {
+    @apply text-fire-600 hover:text-fire-700 font-medium transition-colors duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium;
+  }
 }

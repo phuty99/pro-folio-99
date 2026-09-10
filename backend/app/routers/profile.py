@@ -20,7 +20,7 @@ from app.schemas.profile import (
     ProfileUpdateRequest,
     ProjectResponse,
 )
-from app.services.cv_parser import extract_markdown, parse_cv, parse_cv_with_gemini
+from app.services.cv_parser import extract_markdown, parse_cv, parse_cv_with_deepseek, parse_cv_with_gemini
 from app.services.s3 import delete_image, delete_object, get_presigned_url, upload_bytes, upload_image
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -240,8 +240,12 @@ def scan_cv(
     try:
         parsed = parse_cv_with_gemini(markdown)
     except Exception:
-        logging.exception("Gemini CV parsing failed, falling back to local parser")
-        parsed = parse_cv(markdown)
+        logging.exception("Gemini CV parsing failed, falling back to DeepSeek")
+        try:
+            parsed = parse_cv_with_deepseek(markdown)
+        except Exception:
+            logging.exception("DeepSeek CV parsing failed, falling back to local parser")
+            parsed = parse_cv(markdown)
 
     profile = current_user.profile
     old_key = profile.cv_s3_key

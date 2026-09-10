@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24
     email_verification_expire_minutes: int = 60 * 24
     frontend_url: str = "http://localhost:5173"
+    admin_email: str = "phunv2017@gmail.com"
 
     # Database
     database_url: str
