@@ -27,5 +27,7 @@ class VerifyEmailRequest(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: EmailStr
+    is_admin: bool = False
+    full_name: str = ""
 
     model_config = {"from_attributes": True}

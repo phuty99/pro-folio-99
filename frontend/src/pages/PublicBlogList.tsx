@@ -3,8 +3,6 @@ import { Link, useParams } from 'react-router-dom'
 import apiClient from '../api/client'
 import type { PostSummary } from '../types'
 
-const CARD = 'bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6'
-
 export default function PublicBlogList() {
   const { profileId } = useParams()
   const [posts, setPosts] = useState<PostSummary[] | null>(null)
@@ -24,7 +22,7 @@ export default function PublicBlogList() {
     <div className="max-w-3xl mx-auto mt-10 mb-10 px-4 flex flex-col gap-6">
       <h1 className="text-2xl font-semibold text-earth-900">Blog</h1>
 
-      <section className={CARD}>
+      <section className="card">
         {posts.length === 0 && <p className="text-sm text-earth-500">No posts yet.</p>}
         <div className="flex flex-col divide-y divide-earth-200">
           {posts.map((post) => (

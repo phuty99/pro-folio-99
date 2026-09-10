@@ -28,10 +28,7 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 const MAX_CV_SIZE_BYTES = 5 * 1024 * 1024
 
-const CARD = 'bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6'
 const SECTION_LABEL = 'text-xs font-semibold text-earth-500 uppercase tracking-wide mb-4'
-const FIELD_LABEL = 'block text-xs font-medium text-earth-600 mb-1.5'
-const INPUT = 'w-full border border-earth-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fire-500'
 const SUBCARD = 'border border-earth-200 rounded-xl p-4 flex flex-col gap-3'
 
 const validateImageFile = (file: File): string => {
@@ -362,17 +359,13 @@ export default function Profile() {
         {errorToast}
         <div className="max-w-5xl mx-auto flex justify-between items-center mb-4">
           {profile.is_public ? (
-            <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-fire-600 hover:text-fire-700 font-medium truncate">
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="link text-sm truncate">
               {publicUrl}
             </a>
           ) : (
             <span className="text-sm text-earth-500">Profile is private</span>
           )}
-          <button
-            type="button"
-            onClick={startEdit}
-            className="text-sm text-fire-600 hover:text-fire-700 font-medium shrink-0 ml-4"
-          >
+          <button type="button" onClick={startEdit} className="link text-sm shrink-0 ml-4">
             Edit profile
           </button>
         </div>
@@ -394,7 +387,7 @@ export default function Profile() {
       )}
 
       {/* Avatar + CV scan */}
-      <section className={CARD}>
+      <section className="card">
         <div className="flex items-center gap-4">
           <img
             src={profile.avatar_url || 'https://placehold.co/96x96?text=?'}
@@ -423,151 +416,151 @@ export default function Profile() {
 
       <form onSubmit={handleSave} className="flex flex-col gap-6">
         {/* Basic info */}
-        <section className={CARD}>
+        <section className="card">
           <h2 className={SECTION_LABEL}>Basic info</h2>
           <div className="flex flex-col gap-4">
             <div>
-              <label className={FIELD_LABEL}>Full name</label>
+              <label className="field-label">Full name</label>
               <input
                 type="text"
                 value={form.full_name}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
             <div>
-              <label className={FIELD_LABEL}>Headline</label>
+              <label className="field-label">Headline</label>
               <input
                 type="text"
                 placeholder="e.g. Full-Stack Developer"
                 value={form.headline}
                 onChange={(e) => setForm({ ...form, headline: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
             <div>
-              <label className={FIELD_LABEL}>Bio</label>
+              <label className="field-label">Bio</label>
               <textarea
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
                 rows={4}
-                className={INPUT}
+                className="input"
               />
             </div>
           </div>
         </section>
 
         {/* Contact & links */}
-        <section className={CARD}>
+        <section className="card">
           <h2 className={SECTION_LABEL}>Contact & links</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={FIELD_LABEL}>Phone</label>
+              <label className="field-label">Phone</label>
               <input
                 type="text"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
             <div>
-              <label className={FIELD_LABEL}>Location</label>
+              <label className="field-label">Location</label>
               <input
                 type="text"
                 value={form.location}
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
             <div>
-              <label className={FIELD_LABEL}>Website URL</label>
+              <label className="field-label">Website URL</label>
               <input
                 type="text"
                 value={form.website_url}
                 onChange={(e) => setForm({ ...form, website_url: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
             <div>
-              <label className={FIELD_LABEL}>LinkedIn URL</label>
+              <label className="field-label">LinkedIn URL</label>
               <input
                 type="text"
                 value={form.linkedin_url}
                 onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
             <div className="col-span-2">
-              <label className={FIELD_LABEL}>GitHub URL</label>
+              <label className="field-label">GitHub URL</label>
               <input
                 type="text"
                 value={form.github_url}
                 onChange={(e) => setForm({ ...form, github_url: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
           </div>
         </section>
 
         {/* Experience */}
-        <section className={CARD}>
+        <section className="card">
           <h2 className={SECTION_LABEL}>Experience</h2>
           <div className="flex flex-col gap-4">
             {experiences.map((exp, i) => (
               <div key={i} className={SUBCARD}>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={FIELD_LABEL}>Title</label>
+                    <label className="field-label">Title</label>
                     <input
                       type="text"
                       value={exp.title}
                       onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                   <div>
-                    <label className={FIELD_LABEL}>Company</label>
+                    <label className="field-label">Company</label>
                     <input
                       type="text"
                       value={exp.company}
                       onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, company: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                   <div>
-                    <label className={FIELD_LABEL}>Start</label>
+                    <label className="field-label">Start</label>
                     <input
                       type="text"
                       placeholder="e.g. Jan 2022"
                       value={exp.start_date}
                       onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, start_date: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                   <div>
-                    <label className={FIELD_LABEL}>End</label>
+                    <label className="field-label">End</label>
                     <input
                       type="text"
                       placeholder="e.g. Present"
                       value={exp.end_date}
                       onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, end_date: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className={FIELD_LABEL}>Description</label>
+                  <label className="field-label">Description</label>
                   <textarea
                     value={exp.description}
                     onChange={(e) => setExperiences(experiences.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))}
                     rows={2}
-                    className={INPUT}
+                    className="input"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setExperiences(experiences.filter((_, j) => j !== i))}
-                  className="text-fire-600 text-sm self-start font-medium"
+                  className="link text-sm self-start"
                 >
                   Remove
                 </button>
@@ -584,64 +577,64 @@ export default function Profile() {
         </section>
 
         {/* Education */}
-        <section className={CARD}>
+        <section className="card">
           <h2 className={SECTION_LABEL}>Education</h2>
           <div className="flex flex-col gap-4">
             {educations.map((edu, i) => (
               <div key={i} className={SUBCARD}>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={FIELD_LABEL}>School</label>
+                    <label className="field-label">School</label>
                     <input
                       type="text"
                       value={edu.school}
                       onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, school: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                   <div>
-                    <label className={FIELD_LABEL}>Degree</label>
+                    <label className="field-label">Degree</label>
                     <input
                       type="text"
                       value={edu.degree}
                       onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, degree: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                   <div>
-                    <label className={FIELD_LABEL}>Start</label>
+                    <label className="field-label">Start</label>
                     <input
                       type="text"
                       placeholder="e.g. 2016"
                       value={edu.start_date}
                       onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, start_date: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                   <div>
-                    <label className={FIELD_LABEL}>End</label>
+                    <label className="field-label">End</label>
                     <input
                       type="text"
                       placeholder="e.g. 2020"
                       value={edu.end_date}
                       onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, end_date: e.target.value } : x)))}
-                      className={INPUT}
+                      className="input"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className={FIELD_LABEL}>Description</label>
+                  <label className="field-label">Description</label>
                   <textarea
                     value={edu.description}
                     onChange={(e) => setEducations(educations.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))}
                     rows={2}
-                    className={INPUT}
+                    className="input"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setEducations(educations.filter((_, j) => j !== i))}
-                  className="text-fire-600 text-sm self-start font-medium"
+                  className="link text-sm self-start"
                 >
                   Remove
                 </button>
@@ -658,27 +651,27 @@ export default function Profile() {
         </section>
 
         {/* Skills, interests, visibility, save */}
-        <section className={CARD}>
+        <section className="card">
           <h2 className={SECTION_LABEL}>Skills & interests</h2>
           <div className="flex flex-col gap-4">
             <div>
-              <label className={FIELD_LABEL}>Skills</label>
+              <label className="field-label">Skills</label>
               <input
                 type="text"
                 placeholder="Comma separated, e.g. React, Python, SQL"
                 value={form.skills}
                 onChange={(e) => setForm({ ...form, skills: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
             <div>
-              <label className={FIELD_LABEL}>Interests</label>
+              <label className="field-label">Interests</label>
               <input
                 type="text"
                 placeholder="Comma separated, e.g. Photography, Chess"
                 value={form.interests}
                 onChange={(e) => setForm({ ...form, interests: e.target.value })}
-                className={INPUT}
+                className="input"
               />
             </div>
 
@@ -696,7 +689,7 @@ export default function Profile() {
               <button
                 type="submit"
                 disabled={saving}
-                className="bg-fire-600 hover:bg-fire-700 text-white rounded-lg py-2 px-4 font-medium mt-4"
+                className="btn-primary mt-4"
               >
                 {saving ? 'Saving...' : 'Save profile'}
               </button>
@@ -715,7 +708,7 @@ export default function Profile() {
       </form>
 
       {/* Projects */}
-      <section className={CARD}>
+      <section className="card">
         <h2 className={SECTION_LABEL}>Projects</h2>
         <div className="flex flex-col gap-4">
           {projects.map((proj) => (
@@ -742,50 +735,50 @@ export default function Profile() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={FIELD_LABEL}>Title</label>
+                  <label className="field-label">Title</label>
                   <input
                     type="text"
                     value={proj.title}
                     onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, title: e.target.value } : p)))}
-                    className={INPUT}
+                    className="input"
                   />
                 </div>
                 <div>
-                  <label className={FIELD_LABEL}>Tech stack</label>
+                  <label className="field-label">Tech stack</label>
                   <input
                     type="text"
                     placeholder="Comma separated"
                     value={proj.tech_stack}
                     onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, tech_stack: e.target.value } : p)))}
-                    className={INPUT}
+                    className="input"
                   />
                 </div>
                 <div>
-                  <label className={FIELD_LABEL}>Demo URL</label>
+                  <label className="field-label">Demo URL</label>
                   <input
                     type="text"
                     value={proj.demo_url}
                     onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, demo_url: e.target.value } : p)))}
-                    className={INPUT}
+                    className="input"
                   />
                 </div>
                 <div>
-                  <label className={FIELD_LABEL}>GitHub URL</label>
+                  <label className="field-label">GitHub URL</label>
                   <input
                     type="text"
                     value={proj.github_url}
                     onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, github_url: e.target.value } : p)))}
-                    className={INPUT}
+                    className="input"
                   />
                 </div>
               </div>
               <div>
-                <label className={FIELD_LABEL}>Description</label>
+                <label className="field-label">Description</label>
                 <textarea
                   value={proj.description}
                   onChange={(e) => setProjects(projects.map((p) => (p.id === proj.id ? { ...p, description: e.target.value } : p)))}
                   rows={2}
-                  className={INPUT}
+                  className="input"
                 />
               </div>
               <div className="flex gap-3">
@@ -800,7 +793,7 @@ export default function Profile() {
                 <button
                   type="button"
                   onClick={() => handleDeleteProject(proj.id)}
-                  className="text-fire-600 text-sm self-start font-medium"
+                  className="link text-sm self-start"
                 >
                   Remove
                 </button>
@@ -812,50 +805,50 @@ export default function Profile() {
             <p className="text-sm font-medium text-earth-700">Add a project</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={FIELD_LABEL}>Title</label>
+                <label className="field-label">Title</label>
                 <input
                   type="text"
                   value={newProject.title}
                   onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-                  className={INPUT}
+                  className="input"
                 />
               </div>
               <div>
-                <label className={FIELD_LABEL}>Tech stack</label>
+                <label className="field-label">Tech stack</label>
                 <input
                   type="text"
                   placeholder="Comma separated"
                   value={newProject.tech_stack}
                   onChange={(e) => setNewProject({ ...newProject, tech_stack: e.target.value })}
-                  className={INPUT}
+                  className="input"
                 />
               </div>
               <div>
-                <label className={FIELD_LABEL}>Demo URL</label>
+                <label className="field-label">Demo URL</label>
                 <input
                   type="text"
                   value={newProject.demo_url}
                   onChange={(e) => setNewProject({ ...newProject, demo_url: e.target.value })}
-                  className={INPUT}
+                  className="input"
                 />
               </div>
               <div>
-                <label className={FIELD_LABEL}>GitHub URL</label>
+                <label className="field-label">GitHub URL</label>
                 <input
                   type="text"
                   value={newProject.github_url}
                   onChange={(e) => setNewProject({ ...newProject, github_url: e.target.value })}
-                  className={INPUT}
+                  className="input"
                 />
               </div>
             </div>
             <div>
-              <label className={FIELD_LABEL}>Description</label>
+              <label className="field-label">Description</label>
               <textarea
                 value={newProject.description}
                 onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
                 rows={2}
-                className={INPUT}
+                className="input"
               />
             </div>
             <label className="cursor-pointer text-xs bg-earth-100 hover:bg-earth-200 text-earth-800 px-2 py-1 rounded-lg self-start">
@@ -870,7 +863,7 @@ export default function Profile() {
             <button
               type="submit"
               disabled={addingProject}
-              className="text-sm bg-fire-600 hover:bg-fire-700 text-white px-3 py-1.5 rounded-lg self-start"
+              className="btn-primary self-start"
             >
               {addingProject ? 'Adding...' : '+ Add project'}
             </button>
@@ -879,7 +872,7 @@ export default function Profile() {
       </section>
 
       {/* Gallery */}
-      <section className={CARD}>
+      <section className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className={`${SECTION_LABEL} mb-0`}>Gallery</h2>
           <label className="cursor-pointer text-sm bg-earth-100 hover:bg-earth-200 text-earth-800 px-3 py-1.5 rounded-lg">

@@ -5,8 +5,6 @@ import remarkGfm from 'remark-gfm'
 import apiClient from '../api/client'
 import type { Post } from '../types'
 
-const CARD = 'bg-white dark:bg-earth-100 rounded-2xl border border-earth-300 dark:border-earth-200 shadow-md p-6'
-const INPUT = 'w-full border border-earth-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-fire-500'
 const TOOLBAR_BTN = 'px-2 py-1.5 rounded-md text-xs font-medium bg-earth-100 hover:bg-earth-200 text-earth-800'
 
 const TOOLBAR_ACTIONS = [
@@ -106,7 +104,7 @@ export default function BlogEditor() {
 
   return (
     <div className="max-w-6xl mx-auto mt-10 mb-10 px-4 flex flex-col gap-6">
-      <Link to="/blog" className="text-sm text-fire-600 hover:text-fire-700 font-medium self-start">
+      <Link to="/blog" className="link text-sm self-start">
         ← Back to My Blog
       </Link>
 
@@ -114,9 +112,7 @@ export default function BlogEditor() {
         <h1 className="text-2xl font-semibold text-earth-900">{isEditing ? 'Edit post' : 'New post'}</h1>
         {post && (
           <span
-            className={`text-xs px-2 py-0.5 rounded-full ${
-              post.status === 'published' ? 'bg-fire-50 text-fire-700' : 'bg-earth-100 text-earth-600'
-            }`}
+            className={`badge ${post.status === 'published' ? 'bg-fire-50 text-fire-700' : 'bg-earth-100 text-earth-600'}`}
           >
             {post.status}
           </span>
@@ -125,27 +121,28 @@ export default function BlogEditor() {
 
       {error && <p className="text-fire-600 text-sm">{error}</p>}
 
-      <section className={CARD}>
+      <section className="card">
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block text-xs font-medium text-earth-600 mb-1.5">Title</label>
+            <label className="field-label">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className={INPUT}
+              className="input"
               placeholder="Post title"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-earth-600 mb-1.5">Content (Markdown)</label>
+            <label className="field-label">Content (Markdown)</label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {TOOLBAR_ACTIONS.map((action) => (
                 <button
                   key={action.title}
                   type="button"
                   title={action.title}
+                  aria-label={action.title}
                   onClick={() =>
                     action.kind === 'wrap'
                       ? applyWrap(action.before, action.after, action.placeholder)
@@ -164,7 +161,7 @@ export default function BlogEditor() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={20}
-                className={`${INPUT} font-mono`}
+                className="input font-mono"
                 placeholder="Write your post in Markdown..."
               />
               <div className="border border-earth-300 rounded-lg px-4 py-3 overflow-y-auto max-h-[32rem] prose prose-sm max-w-none dark:prose-invert prose-headings:text-earth-900 prose-p:text-earth-800 prose-a:text-fire-600 prose-strong:text-earth-900 prose-code:text-fire-700">
@@ -182,7 +179,7 @@ export default function BlogEditor() {
               type="button"
               onClick={handleSave}
               disabled={saving || !title.trim()}
-              className="bg-fire-600 hover:bg-fire-700 text-white rounded-lg py-2 px-4 font-medium mt-4"
+              className="btn-primary mt-4"
             >
               {saving ? 'Saving...' : 'Save draft'}
             </button>

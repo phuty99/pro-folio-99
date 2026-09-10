@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { STUDY_FEATURE_ENABLED } from './config/features'
 import Navbar from './components/Navbar'
 import PrivateRoute from './components/PrivateRoute'
+import AdminRoute from './components/AdminRoute'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Profile from './pages/Profile'
@@ -12,6 +14,10 @@ import BlogManage from './pages/BlogManage'
 import BlogEditor from './pages/BlogEditor'
 import PublicBlogList from './pages/PublicBlogList'
 import PublicBlogPost from './pages/PublicBlogPost'
+import StudyHome from './pages/StudyHome'
+import StudyTopic from './pages/StudyTopic'
+import StudyQuiz from './pages/StudyQuiz'
+import AdminStudy from './pages/AdminStudy'
 
 function RootRedirect() {
   const { isAuthenticated } = useAuth()
@@ -65,6 +71,42 @@ function App() {
               <Route path="/u/:profileId" element={<PublicProfile />} />
               <Route path="/u/:profileId/blog" element={<PublicBlogList />} />
               <Route path="/u/:profileId/blog/:slug" element={<PublicBlogPost />} />
+              {STUDY_FEATURE_ENABLED && (
+                <>
+                  <Route
+                    path="/study"
+                    element={
+                      <PrivateRoute>
+                        <StudyHome />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/study/:topicId"
+                    element={
+                      <PrivateRoute>
+                        <StudyTopic />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/study/:topicId/quiz"
+                    element={
+                      <PrivateRoute>
+                        <StudyQuiz />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/study"
+                    element={
+                      <AdminRoute>
+                        <AdminStudy />
+                      </AdminRoute>
+                    }
+                  />
+                </>
+              )}
             </Routes>
           </div>
         </AuthProvider>
