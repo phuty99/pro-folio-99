@@ -1,5 +1,7 @@
 import type { IconType } from 'react-icons'
+import { FaJava } from 'react-icons/fa6'
 import {
+  SiCelery,
   SiClaude,
   SiCplusplus,
   SiCss,
@@ -50,7 +52,7 @@ import { TbBrandCSharp, TbBrandOpenai, TbBrandVite, TbCloud } from 'react-icons/
 const ICON_MAP: Record<string, IconType> = {
   python: SiPython,
   python3: SiPython,
-  java: TbBrandCSharp,
+  java: FaJava,
   javascript: SiJavascript,
   typescript: SiTypescript,
   html: SiHtml5,
@@ -102,6 +104,7 @@ const ICON_MAP: Record<string, IconType> = {
   gitlab: SiGitlab,
   jira: SiJira,
   jest: SiJest,
+  celery: SiCelery,
   nginx: SiNginx,
   linux: SiLinux,
   ubuntu: SiUbuntu,
@@ -124,6 +127,8 @@ const ICON_MAP: Record<string, IconType> = {
 }
 
 const BRAND_COLORS: Record<string, string> = {
+  java: '#ED8B00',
+  celery: '#37814A',
   python: '#3776AB',
   python3: '#3776AB',
   javascript: '#F7DF1E',
