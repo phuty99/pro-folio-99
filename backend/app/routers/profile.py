@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
@@ -9,6 +9,7 @@ from app.models.profile import Education, Experience, Profile, ProfileImage, Pro
 from app.models.user import User
 from app.routers.blog import _full, _summary
 from app.schemas.blog import PostResponse, PostSummary
+from app.schemas.chat import AskRequest, AskResponse
 from app.schemas.profile import (
     CvScanResponse,
     EducationListRequest,
@@ -20,12 +21,26 @@ from app.schemas.profile import (
     ProfileUpdateRequest,
     ProjectResponse,
 )
+from app.services.cv_chat import answer_question
 from app.services.cv_parser import extract_markdown, parse_cv, parse_cv_with_deepseek, parse_cv_with_gemini
+from app.services.rate_limit import SlidingWindowLimiter
 from app.services.s3 import delete_image, delete_object, get_presigned_url, upload_bytes, upload_image
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
 MAX_CV_SIZE_BYTES = 5 * 1024 * 1024
+
+# The ask endpoint is public and spends LLM credits, so cap it per visitor and overall.
+ask_ip_limiter = SlidingWindowLimiter(limit=10, window_seconds=600)
+ask_global_limiter = SlidingWindowLimiter(limit=300, window_seconds=3600)
+
+
+def _client_ip(request: Request) -> str:
+    # The last X-Forwarded-For hop is the one appended by our own reverse proxy; earlier hops are client-controlled.
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()
+    return request.client.host if request.client else "unknown"
 
 
 def _serialize(profile: Profile) -> ProfileResponse:
@@ -263,6 +278,28 @@ def get_public_profile(profile_id: str, db: Session = Depends(get_db)):
     if not profile or not profile.is_public:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
     return _serialize(profile)
+
+
+@router.post("/{profile_id}/ask", response_model=AskResponse)
+def ask_about_profile(profile_id: str, payload: AskRequest, request: Request, db: Session = Depends(get_db)):
+    profile = db.get(Profile, profile_id)
+    if not profile or not profile.is_public:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+    if payload.messages[-1].role != "user":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Last message must be from the user")
+
+    if not ask_ip_limiter.allow(_client_ip(request)) or not ask_global_limiter.allow("global"):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many questions right now. Please try again in a few minutes.",
+        )
+
+    try:
+        answer = answer_question(profile, payload.messages)
+    except Exception:
+        logging.exception("Failed to answer profile question")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Could not get an answer right now")
+    return AskResponse(answer=answer)
 
 
 @router.get("/{profile_id}/posts", response_model=list[PostSummary])

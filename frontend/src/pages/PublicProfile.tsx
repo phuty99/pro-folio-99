@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import apiClient from '../api/client'
+import AskCvChat from '../components/AskCvChat'
 import CvView from '../components/CvView'
 import type { Profile } from '../types'
 
@@ -22,6 +23,7 @@ export default function PublicProfile() {
   return (
     <div className="mt-10 mb-10 px-4">
       <CvView profile={profile} />
+      <AskCvChat profileId={profile.id} name={profile.full_name} />
     </div>
   )
 }
