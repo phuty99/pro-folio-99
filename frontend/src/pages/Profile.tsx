@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import apiClient from '../api/client'
+import AskCvChat from '../components/AskCvChat'
 import CvView from '../components/CvView'
 import AvatarCropModal from '../components/AvatarCropModal'
 import type { Education, Experience, Profile as ProfileType, Project } from '../types'
@@ -370,6 +371,7 @@ export default function Profile() {
           </button>
         </div>
         <CvView profile={profile} />
+        {profile.is_public && <AskCvChat profileId={profile.id} name={profile.full_name} />}
       </div>
     )
   }
