@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
+from app.core.http import get_client_ip
 from app.db.database import get_db
 from app.models.profile import Education, Experience, Profile, ProfileImage, Project
 from app.models.user import User
@@ -33,14 +34,6 @@ MAX_CV_SIZE_BYTES = 5 * 1024 * 1024
 # The ask endpoint is public and spends LLM credits, so cap it per visitor and overall.
 ask_ip_limiter = SlidingWindowLimiter(limit=10, window_seconds=600)
 ask_global_limiter = SlidingWindowLimiter(limit=300, window_seconds=3600)
-
-
-def _client_ip(request: Request) -> str:
-    # The last X-Forwarded-For hop is the one appended by our own reverse proxy; earlier hops are client-controlled.
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[-1].strip()
-    return request.client.host if request.client else "unknown"
 
 
 def _serialize(profile: Profile) -> ProfileResponse:
@@ -288,7 +281,7 @@ def ask_about_profile(profile_id: str, payload: AskRequest, request: Request, db
     if payload.messages[-1].role != "user":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Last message must be from the user")
 
-    if not ask_ip_limiter.allow(_client_ip(request)) or not ask_global_limiter.allow("global"):
+    if not ask_ip_limiter.allow(get_client_ip(request)) or not ask_global_limiter.allow("global"):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many questions right now. Please try again in a few minutes.",
