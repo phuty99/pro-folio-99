@@ -10,6 +10,8 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: profile-backend
+  LOKI_HOST: insight-logs-prod-ap-southeast-1.grafana.net
+  LOKI_USER: "1838043"
 
 jobs:
   build-and-push:
@@ -47,6 +49,16 @@ jobs:
           script: |
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+            # Ship container logs to Grafana Cloud Loki. Skipped when the token or plugin is missing,
+            # so a logging problem can never stop the backend from deploying.
+            docker plugin ls --format '{{.Name}}' | grep -q '^loki:' || docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions || true
+            LOKI_TOKEN='${{ secrets.GRAFANA_LOKI_TOKEN }}'
+            LOG_OPTS=""
+            if [ -n "$LOKI_TOKEN" ] && docker plugin ls --format '{{.Name}}' | grep -q '^loki:'; then
+              LOG_OPTS="--log-driver=loki --log-opt loki-url=https://${{ env.LOKI_USER }}:${LOKI_TOKEN}@${{ env.LOKI_HOST }}/loki/api/v1/push --log-opt mode=non-blocking --log-opt max-buffer-size=4m --log-opt loki-external-labels=app=profile-backend,env=production"
+            fi
+
             docker stop profile-backend || true
             docker rm profile-backend || true
             docker run -d \
@@ -54,5 +66,6 @@ jobs:
               --restart unless-stopped \
               --env-file /home/ec2-user/backend.env \
               -p 127.0.0.1:8000:8000 \
+              $LOG_OPTS \
               ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
             docker image prune -f

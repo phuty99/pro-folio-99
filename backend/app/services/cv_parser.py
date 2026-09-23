@@ -291,7 +291,7 @@ def parse_cv_with_gemini(markdown: str) -> dict:
         try:
             response = requests.post(
                 f"{settings.gemini_api_base}/v1beta/models/{settings.gemini_model}:generateContent",
-                params={"key": settings.gemini_api_key},
+                headers={"x-goog-api-key": settings.gemini_api_key},
                 json={
                     "system_instruction": {"parts": [{"text": LLM_SYSTEM_PROMPT}]},
                     "contents": [{"role": "user", "parts": [{"text": markdown}]}],
