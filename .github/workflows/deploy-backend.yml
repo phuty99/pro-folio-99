@@ -10,7 +10,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: profile-backend
-  LOKI_HOST: insight-logs-prod-ap-southeast-1.grafana.net
+  LOKI_HOST: logs-prod-020.grafana.net
   LOKI_USER: "1838043"
 
 jobs:
