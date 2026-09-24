@@ -11,7 +11,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: profile-backend
   LOKI_HOST: logs-prod-020.grafana.net
-  LOKI_USER: "1838043"
+  LOKI_USER: "1795826"
 
 jobs:
   build-and-push:
