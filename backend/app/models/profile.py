@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,11 @@ class Profile(Base):
     skills: Mapped[str] = mapped_column(Text, default="")
     interests: Mapped[str] = mapped_column(Text, default="")
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Free-form key/value facts found in a scanned CV that don't fit the fields above
+    # (e.g. date of birth, nationality). Not exposed in any API response or rendered in
+    # the UI; read directly by the "Ask about" chatbot for grounding.
+    extra_info: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
