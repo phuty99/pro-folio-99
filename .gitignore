@@ -14,3 +14,6 @@ frontend/.env
 .idea/
 .DS_Store
 Thumbs.db
+
+# Claude Code local settings (per-machine permissions, not project config)
+.claude/settings.local.json
