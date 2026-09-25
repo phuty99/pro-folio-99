@@ -258,6 +258,10 @@ def scan_cv(
     profile = current_user.profile
     old_key = profile.cv_s3_key
     profile.cv_s3_key = upload_bytes(contents, folder=f"cv/{current_user.id}", ext="pdf", content_type="application/pdf")
+    # Not shown in the review form or any API response; saved immediately so it's
+    # available to the "Ask about" chatbot right after scanning.
+    extra_info = parsed.pop("extra_info", None)
+    profile.extra_info = extra_info or {}
     db.commit()
     if old_key:
         delete_object(old_key)

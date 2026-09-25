@@ -12,6 +12,25 @@ function splitTags(text: string): string[] {
     .filter(Boolean)
 }
 
+function DescriptionBlock({ text }: { text: string }) {
+  const lines = text.split('\n').filter((line) => line.trim())
+  return (
+    <div className="mt-1.5 flex flex-col gap-1">
+      {lines.map((line, i) =>
+        line.trim().startsWith('- ') ? (
+          <p key={i} className="text-earth-900 font-semibold text-base leading-7">
+            {line}
+          </p>
+        ) : (
+          <p key={i} className={`text-earth-900 font-bold text-base leading-7 ${i > 0 ? 'mt-2' : ''}`}>
+            {line}
+          </p>
+        )
+      )}
+    </div>
+  )
+}
+
 function SkillPill({ skill }: { skill: string }) {
   const { Icon, color } = getSkillIcon(skill)
   return (
@@ -153,7 +172,7 @@ export default function CvView({ profile }: { profile: Profile }) {
                       </p>
                     )}
                   </div>
-                  {exp.description && <p className="text-earth-900 font-semibold mt-1.5 text-base whitespace-pre-line leading-7">{exp.description}</p>}
+                  {exp.description && <DescriptionBlock text={exp.description} />}
                 </div>
               ))}
             </div>
@@ -180,7 +199,7 @@ export default function CvView({ profile }: { profile: Profile }) {
                       </p>
                     )}
                   </div>
-                  {edu.description && <p className="text-earth-900 font-semibold mt-1.5 text-base whitespace-pre-line leading-7">{edu.description}</p>}
+                  {edu.description && <DescriptionBlock text={edu.description} />}
                 </div>
               ))}
             </div>

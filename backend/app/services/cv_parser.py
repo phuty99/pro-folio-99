@@ -209,7 +209,8 @@ CV_JSON_SCHEMA_HINT = """{
   ],
   "educations": [
     {"school": "", "degree": "", "start_date": "", "end_date": "", "description": ""}
-  ]
+  ],
+  "extra_info": {}
 }"""
 
 LLM_SCALAR_FIELDS = (
@@ -228,7 +229,25 @@ LLM_SYSTEM_PROMPT = (
     "You extract structured resume data from CV text. "
     "Reply with a single JSON object matching exactly this shape, "
     "leaving fields as empty string/list when not found in the text:\n"
-    f"{CV_JSON_SCHEMA_HINT}"
+    f"{CV_JSON_SCHEMA_HINT}\n\n"
+    "For every 'description' field: preserve the source's bullet-point structure as plain text lines "
+    "separated by a single \\n newline character. Do not merge multiple bullet points into one run-on paragraph. "
+    "Prefix every bullet line with '- '. If the entry starts with a project name and its own date range "
+    "(e.g. 'Project: X (01/2025 - Present)'), keep that as its own first line without a '- ' prefix, "
+    "then list the bullets below it each starting with '- '.\n\n"
+    "Some resumes list an overview of roles (company, title, dates) under an 'Experience' heading, "
+    "with the actual bullet-point achievements listed separately under a 'Projects' heading, where each "
+    "project's heading names the employer in parentheses (e.g. 'Project Name (Company X)') or otherwise makes "
+    "clear which employer it belongs to. When you see this pattern, you MUST match each project to the "
+    "experience entry for that same company and use that project's bullets (formatted as above) as the "
+    "experience's 'description'. If an employer has multiple matching projects, concatenate all of their "
+    "bullets in chronological order. Never leave 'description' empty just because the bullets live under a "
+    "different heading than the employer's name.\n\n"
+    "'extra_info' is a catch-all for real facts stated in the CV that don't fit any field above "
+    "(e.g. date of birth, nationality, marital status, driver's license, expected salary, portfolio "
+    "handles). Represent it as a flat JSON object of short snake_case keys to short string values, "
+    "e.g. {\"date_of_birth\": \"02/05/1999\", \"nationality\": \"Vietnamese\"}. Leave it as {} if there is "
+    "nothing left over. Never invent values or repeat information already captured in another field."
 )
 
 
@@ -254,6 +273,10 @@ def _normalize_llm_result(data: dict) -> dict:
         }
         for e in data.get("educations", [])
     ]
+    extra_info = data.get("extra_info")
+    result["extra_info"] = {
+        str(k): str(v) for k, v in extra_info.items() if v not in (None, "")
+    } if isinstance(extra_info, dict) else {}
     return result
 
 
@@ -413,4 +436,5 @@ def parse_cv(markdown: str) -> dict:
         "interests": joined("interests"),
         "experiences": experiences,
         "educations": educations,
+        "extra_info": {},
     }
