@@ -157,7 +157,7 @@ export default function CvView({ profile }: { profile: Profile }) {
             <h2 className="text-xl font-black text-earth-900 mb-5">Experience</h2>
             <div className="flex flex-col">
               {profile.experiences.map((exp, i) => (
-                <div key={i} className="relative pl-9 pb-7 last:pb-0 border-l-2 border-earth-300 last:border-transparent">
+                <div key={i} className="relative pl-9 pb-7 border-l-2 border-earth-300">
                   <VoxelCube size={22} className="absolute -left-[11px] top-0" />
                   <div className="flex flex-wrap justify-between gap-x-4 min-w-0">
                     <h3 className="text-xl font-black text-earth-900 leading-tight min-w-0">
